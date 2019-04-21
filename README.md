@@ -19,7 +19,7 @@ It is available both as a **command-line tool** and as a **Fastlane plugin**.
 
 **IconBanner** is inspired by the great [HazAT/badge](https://github.com/HazAT/badge). It provides custom banner creation on-the-fly, allowing to create different text banners for different build contexts.
 
-It allows to create these kind of icons:
+It allows to create this kind of icons:
 
 |Original|Daily|QA|Staging|Production|
 |---|---|---|---|---|
@@ -35,7 +35,7 @@ It allows to create these kind of icons:
 Start by running this command in your project repository:
 
 ```bash
-fastlane add_plugin fastlane-plugin-icon_banner
+fastlane add_plugin icon_banner
 ```
 
 Then simply add the following actions in your Fastfile:
@@ -58,7 +58,7 @@ First install the gem:
 gem install icon-banner
 ```
 
-Then use it directly:
+Then use it directly from the root of your app repository:
 
 ```bash
 icon-banner generate [options]
