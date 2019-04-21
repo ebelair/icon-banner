@@ -20,4 +20,6 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'fastlane', '>= 2.100.0'
   spec.add_dependency 'mini_magick', '>= 4.5.1'
+
+  spec.add_development_dependency 'rspec', '~> 3.4.0'
 end
