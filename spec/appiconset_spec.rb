@@ -12,8 +12,6 @@ RSpec.describe IconBanner::AppIconSet do
     path = current_path
     options = FastlaneCore::Configuration.create(IconBanner::IconBanner.available_options, Hash.new)
 
-    app_icon_set.restore path # just make sure
-
     expect(options[:backup]).to be_truthy
 
     icons = Dir.glob(File.join(icon_path, '*.{png,PNG}'))

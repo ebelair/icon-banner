@@ -9,6 +9,8 @@ module IconBanner
     def generate(path, options)
       IconBanner.validate_libs!
 
+      restore(path) # restore in case it was already run before
+
       app_icons = get_app_icons(path)
 
       label = options[:label]

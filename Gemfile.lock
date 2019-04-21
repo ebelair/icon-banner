@@ -2,8 +2,8 @@ PATH
   remote: .
   specs:
     icon-banner (0.1.0)
-      fastlane (>= 2.100.0)
-      mini_magick (>= 4.5.1)
+      fastlane (~> 2.100)
+      mini_magick (~> 4.5)
 
 GEM
   remote: https://rubygems.org/
@@ -175,7 +175,7 @@ PLATFORMS
 
 DEPENDENCIES
   icon-banner!
-  rspec (~> 3.4.0)
+  rspec (~> 3.4)
 
 BUNDLED WITH
    1.16.4
