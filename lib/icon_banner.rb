@@ -48,12 +48,12 @@ module IconBanner
     end
 
     def self.generate(path, options)
-      # AppIconSet.new.generate(path, options)
+      AppIconSet.new.generate(path, options)
       IcLauncher.new.generate(path, options)
     end
 
     def self.restore(path)
-      # AppIconSet.new.restore(path)
+      AppIconSet.new.restore(path)
       IcLauncher.new.restore(path)
     end
 
