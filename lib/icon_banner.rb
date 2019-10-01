@@ -3,7 +3,7 @@ require 'icon_banner/ic_launcher'
 require 'commander'
 
 module IconBanner
-  VERSION = '0.1.0'
+  VERSION = '0.1.1'
   DESCRIPTION = 'IconBanner adds custom nice-looking banners over your mobile app icons'
 
   UI = FastlaneCore::UI
