@@ -16,7 +16,7 @@ Gem::Specification.new do |spec|
   spec.files         = Dir['lib/**/*'] + %w(README.md LICENSE)
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'icon-banner', '~> 0.2.0'
+  spec.add_dependency 'icon-banner', '~> 0.2.1'
 
   spec.add_development_dependency 'fastlane', '~> 2.100'
   spec.add_development_dependency 'rspec', '~> 3.4'
