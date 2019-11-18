@@ -65,6 +65,8 @@ module IconBanner
       UI.message "Completed #{self.class::PLATFORM} restore."
     end
 
+    private
+
     def get_app_icons(path)
       app_icons = Dir.glob("#{path}#{self.class::BASE_ICON_PATH}")
       app_icons.reject { |icon| should_ignore_icon(icon) }

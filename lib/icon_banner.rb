@@ -1,5 +1,6 @@
 require 'icon_banner/appiconset'
-require 'icon_banner/ic_launcher'
+require 'icon_banner/ic_launcher_png'
+require 'icon_banner/ic_launcher_vector'
 require 'commander'
 
 module IconBanner
@@ -48,13 +49,15 @@ module IconBanner
     end
 
     def self.generate(path, options)
-      AppIconSet.new.generate(path, options)
-      IcLauncher.new.generate(path, options)
+      # AppIconSet.new.generate(path, options)
+      # IcLauncherPng.new.generate(path, options)
+      IcLauncherVector.new.generate(path, options)
     end
 
     def self.restore(path)
-      AppIconSet.new.restore(path)
-      IcLauncher.new.restore(path)
+      # AppIconSet.new.restore(path)
+      # IcLauncherPng.new.generate(path, options)
+      IcLauncherVector.new.restore(path)
     end
 
     def self.available_options

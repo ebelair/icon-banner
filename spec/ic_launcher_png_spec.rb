@@ -1,15 +1,15 @@
 require 'icon_banner'
-require 'icon_banner/ic_launcher'
+require 'icon_banner/ic_launcher_png'
 require 'mini_magick'
 
-RSpec.describe IconBanner::IcLauncher do
+RSpec.describe IconBanner::IcLauncherPng do
   SAMPLE_ICONSET = 'ic_launcher_icons' # Icons from http://www.iconarchive.com/show/android-lollipop-icons-by-dtafalonso.html
   REFERENCE_ICONSET = 'ic_launcher_reference'
   
   LABELS = %w{Daily QA Staging Production}
 
   it 'test icons' do
-    app_icon_set = IconBanner::IcLauncher.new
+    app_icon_set = IconBanner::IcLauncherPng.new
     path = icon_path
     options = FastlaneCore::Configuration.create(IconBanner::IconBanner.available_options, Hash.new)
 

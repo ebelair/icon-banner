@@ -20,6 +20,8 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'fastlane', '~> 2.100'
   spec.add_dependency 'mini_magick', '~> 4.9.4'
+  spec.add_dependency 'ox', '~> 2.11'
+  spec.add_dependency 'text2svg', '~> 0.5'
 
   spec.add_development_dependency 'rspec', '~> 3.4'
 end
