@@ -3,7 +3,7 @@ require 'icon_banner/ic_launcher'
 require 'commander'
 
 module IconBanner
-  VERSION = '0.1.1'
+  VERSION = '0.2.0'
   DESCRIPTION = 'IconBanner adds custom nice-looking banners over your mobile app icons'
 
   UI = FastlaneCore::UI
@@ -76,6 +76,11 @@ module IconBanner
                                        description: 'Creates a backup of icons before applying banners (only set to `false` if you are under source-control)',
                                        is_string: false,
                                        default_value: true,
+                                       optional: true),
+
+          FastlaneCore::ConfigItem.new(key: :platform,
+                                       description: 'Selects the platform to process (`ios`, `android` or `all`). Auto-inferred by lane if available',
+                                       default_value: 'all',
                                        optional: true)
       ]
     end

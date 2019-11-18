@@ -7,6 +7,7 @@ module IconBanner
   class AppIconSet < Process
     BASE_ICON_PATH = '/**/*.appiconset/*.png'
     PLATFORM = 'iOS'
+    PLATFORM_CODE = 'ios'
 
     def generate_banner(path, label, color, font)
       MiniMagick::Tool::Convert.new do |convert|
@@ -35,6 +36,15 @@ module IconBanner
         combine.pointsize 150 - ([label.length - 8, 0].max * 8)
         combine.draw "affine 0.5,-0.5,0.5,0.5,-286,-286 text 0,0 \"#{label}\""
       end
+    end
+
+    def backup_path(path)
+      ext = File.extname path
+      path.gsub(ext, BACKUP_EXTENSION + ext)
+    end
+
+    def should_ignore_icon(icon)
+      icon[/\/Carthage\//] || icon[/\/Pods\//] || icon[/\/Releases\//]
     end
   end
 end

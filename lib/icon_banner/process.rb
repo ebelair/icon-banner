@@ -5,11 +5,15 @@ module IconBanner
   class Process
     BASE_ICON_PATH = '__TO OVERRIDE__'
     PLATFORM = '__TO OVERRIDE__'
+    PLATFORM_CODE = '__TO OVERRIDE__'
 
     BACKUP_EXTENSION = '.bak'
 
     def generate(path, options)
       IconBanner.validate_libs!
+      return unless validate_platform(options)
+
+      UI.message "Generating #{self.class::PLATFORM} banners..."
 
       restore(path) # restore in case it was already run before
 
@@ -19,8 +23,6 @@ module IconBanner
       font = options[:font] || IconBanner.font_path
 
       if app_icons.count > 0
-        UI.message "Generating #{self.class::PLATFORM} banners..."
-
         app_icons.each do |icon_path|
           UI.verbose "Processing #{icon_path}"
           create_backup icon_path if options[:backup]
@@ -42,29 +44,30 @@ module IconBanner
 
         UI.message "Completed #{self.class::PLATFORM} generation."
       else
-        UI.error('No icon found.')
-        UI.message self.class::BASE_ICON_PATH
+        UI.message "No #{self.class::PLATFORM} icons found."
       end
     end
 
     def restore(path)
+      return unless validate_platform({})
+
+      UI.message "Restoring #{self.class::PLATFORM} icons..."
+
       app_icons = get_app_icons(path)
 
       if app_icons.count > 0
-        UI.message "Restoring #{self.class::PLATFORM} icons..."
-
         app_icons.each do |icon_path|
           UI.verbose "Restoring #{icon_path}"
           restore_backup icon_path
         end
-
-        UI.message "Completed #{self.class::PLATFORM} restore."
       end
+
+      UI.message "Completed #{self.class::PLATFORM} restore."
     end
 
     def get_app_icons(path)
       app_icons = Dir.glob("#{path}#{self.class::BASE_ICON_PATH}")
-      app_icons.reject { |i| i[/\/Carthage\//] || i[/\/Pods\//] ||i[/\/Releases\//] }
+      app_icons.reject { |icon| should_ignore_icon(icon) }
     end
 
     def find_base_color(path)
@@ -81,10 +84,6 @@ module IconBanner
       color[/rgba?\([^)]*\)/]
     end
 
-    def generate_banner(path, label, color, font)
-      UI.error 'Should not be run on base class'
-    end
-
     def process_icon(icon_path, banner_path)
       icon = MiniMagick::Image.open(icon_path)
       banner = MiniMagick::Image.open(banner_path)
@@ -93,7 +92,9 @@ module IconBanner
     end
 
     def create_backup(icon_path)
-      FileUtils.cp(icon_path, backup_path(icon_path))
+      backup_path = backup_path(icon_path)
+      FileUtils.mkdir_p(File.dirname(backup_path))
+      FileUtils.cp(icon_path, backup_path)
     end
 
     def restore_backup(icon_path)
@@ -104,9 +105,21 @@ module IconBanner
       end
     end
 
+    def validate_platform(options)
+      platform = ENV['FASTLANE_PLATFORM_NAME'] || options[:platform]
+      platform.nil? || platform[/#{self.class::PLATFORM_CODE}/i] || platform == 'all'
+    end
+
+    def generate_banner(path, label, color, font)
+      UI.error '`generate_banner` should not be run on base class'
+    end
+
     def backup_path(path)
-      ext = File.extname path
-      path.gsub(ext, BACKUP_EXTENSION + ext)
+      UI.error '`backup_path` should not be run on base class'
+    end
+
+    def should_ignore_icon(icon)
+      UI.error '`should_ignore_icon` should not be run on base class'
     end
   end
 end

@@ -7,6 +7,7 @@ module IconBanner
   class IcLauncher < Process
     BASE_ICON_PATH = '/**/ic_launcher*.png'
     PLATFORM = 'Android (Legacy)'
+    PLATFORM_CODE = 'android'
 
     def generate_banner(path, label, color, font)
       size = 1024
@@ -71,6 +72,14 @@ module IconBanner
         combine.pointsize font_size
         combine.draw "text #{x_middle - size / 2},#{y_middle - size / 2} \"#{label}\""
       end
+    end
+
+    def backup_path(path)
+      path.gsub('/src/', "/src#{BACKUP_EXTENSION}/")
+    end
+
+    def should_ignore_icon(icon)
+      icon[/\/build\//] || icon[/\/generated\//] || icon[/#{BACKUP_EXTENSION}/]
     end
   end
 end

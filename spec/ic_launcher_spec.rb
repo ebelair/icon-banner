@@ -25,14 +25,14 @@ RSpec.describe IconBanner::IcLauncher do
         reference = icon.sub(SAMPLE_ICONSET, REFERENCE_ICONSET)
                         .sub('.png', "_#{label}.png")
 
-        #begin
-        #  compare = `compare -metric PSNR #{icon} #{reference} NULL: 2>&1`
-        #  expect(compare).to eq('inf')
-        #end
-        # To regenerate images, replace this block with:
         begin
-          FileUtils.copy icon, reference
+          compare = `compare -metric PSNR #{icon} #{reference} NULL: 2>&1`
+          expect(compare).to eq('inf')
         end
+        # To regenerate images, replace this block with:
+        # begin
+        #   FileUtils.copy icon, reference
+        # end
       end
 
       app_icon_set.restore path
