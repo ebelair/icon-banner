@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    icon-banner (0.1.1)
+    icon-banner (0.2.0)
       fastlane (~> 2.100)
       mini_magick (~> 4.9.4)
 
