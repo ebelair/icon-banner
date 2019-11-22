@@ -10,6 +10,8 @@ module IconBanner
     PLATFORM = 'Android (Legacy)'
 
     def generate_banner(path, label, color, font)
+      banner_file = Tempfile.new %w[banner .png]
+
       size = 1024
       font_size = 140 - ([label.length - 12, 0].max * 12)
 
@@ -17,10 +19,10 @@ module IconBanner
       MiniMagick::Tool::Convert.new do |convert|
         convert.size '1024x1024'
         convert << 'xc:transparent'
-        convert << path
+        convert << banner_file.path
       end
 
-      banner = MiniMagick::Image.new path
+      banner = MiniMagick::Image.new banner_file.path
 
       banner.combine_options do |combine|
         combine.font font
@@ -41,10 +43,10 @@ module IconBanner
       MiniMagick::Tool::Convert.new do |convert|
         convert.size "#{size}x#{size}"
         convert << 'xc:transparent'
-        convert << path
+        convert << banner_file.path
       end
 
-      banner = MiniMagick::Image.new path
+      banner = MiniMagick::Image.new banner_file.path
 
       x_start = size - margin * 2 - width
       x_end = size - margin
@@ -72,6 +74,13 @@ module IconBanner
         combine.pointsize font_size
         combine.draw "text #{x_middle - size / 2},#{y_middle - size / 2} \"#{label}\""
       end
+
+      banner_file.close
+
+      icon = MiniMagick::Image.open(path)
+      banner = MiniMagick::Image.open(banner_file.path)
+      banner.resize "#{icon.width}x#{icon.height}"
+      icon.composite(banner).write(path)
     end
   end
 end

@@ -7,7 +7,7 @@ require 'text2svg'
 
 module IconBanner
   class IcLauncherVector < IcLauncherBase
-    BASE_ICON_PATH = '/**/ic_launcher_foreground.xml'
+    BASE_ICON_PATH = '/**/ic_launcher{,_round}.xml'
     PLATFORM = 'Android (Adaptive)'
 
     def generate_banner(path, label, color, font)
@@ -22,6 +22,7 @@ module IconBanner
     end
 
     def find_base_color(path)
+      # TODO: extraire du ic_launcher.xml
       'black'
     end
   end

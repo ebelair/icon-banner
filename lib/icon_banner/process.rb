@@ -28,15 +28,14 @@ module IconBanner
           create_backup icon_path if options[:backup]
 
           color = options[:color]
-          begin
-            color = find_base_color(icon_path)
-            UI.verbose "Color: #{color}"
-          end unless color
+          color = find_base_color(icon_path) unless color
+          color = $last_used_color unless color
+          color = 'black' unless color
+          UI.verbose "Primary color: #{color}"
 
-          banner_file = Tempfile.new %w[banner .png]
-          generate_banner banner_file.path, label, color, font
-          process_icon icon_path, banner_file.path
-          banner_file.close
+          $last_used_color = color
+
+          generate_banner icon_path, label, color, font
 
           UI.verbose "Completed processing #{File.basename icon_path}"
           UI.verbose ''
@@ -86,13 +85,6 @@ module IconBanner
       color[/rgba?\([^)]*\)/]
     end
 
-    def process_icon(icon_path, banner_path)
-      icon = MiniMagick::Image.open(icon_path)
-      banner = MiniMagick::Image.open(banner_path)
-      banner.resize "#{icon.width}x#{icon.height}"
-      icon.composite(banner).write(icon_path)
-    end
-
     def create_backup(icon_path)
       backup_path = backup_path(icon_path)
       FileUtils.mkdir_p(File.dirname(backup_path))
@@ -105,6 +97,15 @@ module IconBanner
         FileUtils.cp(restore_path, icon_path)
         File.delete restore_path
       end
+    end
+
+    def append_parent_dirname(path, suffix, dir = '')
+      segments = path.split(File::SEPARATOR)
+      dir_index = segments.index(dir)
+      dir_index = [segments.size - 1, 0].max unless dir_index && dir_index - 1 >= 0
+
+      parent_segment = segments[dir_index-1]
+      path.gsub("/#{parent_segment}/","/#{parent_segment}#{suffix}/")
     end
 
     def validate_platform(options)
