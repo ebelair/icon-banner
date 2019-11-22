@@ -1,6 +1,7 @@
 require 'icon_banner/process'
 require 'icon_banner/ic_launcher_base'
 
+require 'chroma'
 require 'fastlane_core'
 require 'ox'
 require 'text2svg'
@@ -62,7 +63,7 @@ module IconBanner
         banner_bg_path = "M 0 #{banner_bg_y} L 0 #{height} L #{width} #{height} L #{width} #{banner_bg_y}z"
 
         banner_ln_object = Ox::Element.new('path')
-        banner_ln_object['android:fillColor'] = color
+        banner_ln_object['android:fillColor'] = color.paint.to_hex
         banner_ln_object['android:pathData'] = banner_ln_path
         foreground_icon << banner_ln_object
 
@@ -91,7 +92,7 @@ module IconBanner
             letter_group['android:translateY'] = letter_path['transform'].gsub(/[^\d,-]/,'').split(',')[-1]
           end
           letter_object = Ox::Element.new('path')
-          letter_object['android:fillColor'] = color
+          letter_object['android:fillColor'] = color.paint.to_hex
           letter_object['android:pathData'] = letter_path['d']
           letter_group << letter_object
           banner_text_object << letter_group
@@ -154,10 +155,17 @@ module IconBanner
           color_values = background_icon.locate("*/color[@name=#{background_color}]")
           return color_values[0].nodes[0] unless color_values.empty?
         elsif background_drawable
-          # TODO: Calculate average instead of using first color
           colors = background_icon.locate('*/?[@android:fillColor]').map { |c| c['android:fillColor'] }
           colors = background_icon.locate('*/?[@android:color]').map { |c| c['android:color'] } if colors.empty?
-          return colors[0]
+
+          if colors.length > 1
+            r = colors.inject(0.0) { |sum, color| sum + color.paint.rgb.r } / colors.length
+            g = colors.inject(0.0) { |sum, color| sum + color.paint.rgb.g } / colors.length
+            b = colors.inject(0.0) { |sum, color| sum + color.paint.rgb.b } / colors.length
+            return "rgb(#{r},#{g},#{b})".paint.to_hex
+          else
+            return colors[0]
+          end
         end
       end
     end
