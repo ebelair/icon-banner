@@ -22,35 +22,26 @@ module IconBanner
     LABEL_BOTTOM_PADDING = 1.0
 
     def generate_banner(path, label, color, font)
-      text_svg = Text2svg(label, font: font, text_align: :center, scale: 0.1)
-      text_xml = Ox.parse(text_svg.to_s)
-      text_path = text_xml.locate('g')[0]
-      text_frame = text_xml['viewBox'].split(' ').map  { |i| i.to_f }
-      text_width = text_frame[2]
-      text_height = text_frame[3]
-      text_base_scale = (text_width / text_height) > (MAX_LABEL_WIDTH / MAX_LABEL_HEIGHT) ?
-                       MAX_LABEL_WIDTH / text_width : MAX_LABEL_HEIGHT / text_height
+      text_svg = generate_text_svg(label, font)
 
       launcher_xml = Ox.load_file(path, mode: :generic)
 
       foreground_item = launcher_xml.locate('*/foreground')[0]
-      background_item = launcher_xml.locate('*/background')[0]
-
-      if foreground_item.nil? || background_item.nil?
-        UI.error "Cannot process #{path}: malformed XML (foreground and background unavailable)"
+      if foreground_item.nil? || foreground_item['android:drawable'].nil?
+        UI.error "Cannot process #{path}: <foreground> must refer to a drawable"
         return
       end
 
-      foreground_filename = foreground_item['android:drawable'].gsub(/@drawable\/(.*)/, '\1.xml')
-      foreground_files = find_files(path, foreground_filename)
+      foreground_drawable = foreground_item['android:drawable'][/(?<=@drawable\/).*/]
+      foreground_files = find_files(path, "#{foreground_drawable}.xml")
 
       foreground_files.each do |foreground_file|
         $adaptive_processed_files = [] if $adaptive_processed_files.nil?
         break if $adaptive_processed_files.include?(foreground_file)
-        $adaptive_processed_files.push(foreground_file)
+        $adaptive_processed_files.push foreground_file
 
-        restore_backup(foreground_file)
-        create_backup(foreground_file)
+        restore_backup foreground_file
+        create_backup foreground_file
 
         foreground_icon = Ox.load_file(foreground_file, mode: :generic)
 
@@ -78,14 +69,12 @@ module IconBanner
         banner_bg_object['android:pathData'] = banner_bg_path
         foreground_icon << banner_bg_object
 
-        text_scale = text_base_scale * scale
-        banner_text_x = (width - text_width * text_scale) * 0.5
-        banner_text_y = banner_ln_y + ((BANNER_HEIGHT - LABEL_BOTTOM_PADDING) * scale - text_height * text_scale) * 0.5
+        text_scale = text_svg[:scale] * scale
+        banner_text_x = (width - text_svg[:width] * text_scale) * 0.5
+        banner_text_y = banner_ln_y + ((BANNER_HEIGHT - LABEL_BOTTOM_PADDING) * scale - text_svg[:height] * text_scale) * 0.5
 
-        if text_path['transform']
-          banner_text_x += text_scale * text_path['transform'].gsub(/[^\d,-]/,'').split(',')[-2].to_f
-          banner_text_y += text_scale * text_path['transform'].gsub(/[^\d,-]/,'').split(',')[-1].to_f
-        end
+        banner_text_x += text_scale * text_svg[:x]
+        banner_text_y += text_scale * text_svg[:y]
 
         banner_text_object = Ox::Element.new('group')
         banner_text_object['android:scaleX'] = text_scale.to_s
@@ -93,7 +82,7 @@ module IconBanner
         banner_text_object['android:translateX'] = banner_text_x.to_s
         banner_text_object['android:translateY'] = banner_text_y.to_s
 
-        text_path.nodes.each do |letter_path|
+        text_svg[:paths].each do |letter_path|
           letter_group = Ox::Element.new('group')
           if letter_path['transform']
             letter_group['android:translateX'] = letter_path['transform'].gsub(/[^\d,-]/,'').split(',')[-2]
@@ -112,14 +101,32 @@ module IconBanner
 
         UI.verbose "Added banner to #{foreground_file}"
       end
+    end
 
-      icon_background_path = background_item['android:drawable']
+    def generate_text_svg(label, font)
+      text_svg = Text2svg(label, font: font, text_align: :center, scale: 0.1)
+      text_xml = Ox.parse(text_svg.to_s)
+      text_frame = text_xml['viewBox'].split(' ').map  { |i| i.to_f }
+      text_node = text_xml.locate('g')[0]
+      text_x = (text_node['transform'] || '').gsub(/[^\d,-]/,'').split(',')[-2].to_f
+      text_y = (text_node['transform'] || '').gsub(/[^\d,-]/,'').split(',')[-1].to_f
+      text_width = text_frame[2]
+      text_height = text_frame[3]
 
-      # TODO: Complete generation
+      {
+        x: text_x,
+        y: text_y,
+        width: text_width,
+        height: text_height,
+        paths: text_node.nodes,
+        scale: (text_width / text_height) > (MAX_LABEL_WIDTH / MAX_LABEL_HEIGHT) ?
+                    MAX_LABEL_WIDTH / text_width : MAX_LABEL_HEIGHT / text_height
+      }
     end
 
     def find_files(path, filename)
       current_path = File.dirname(path)
+      # TODO: Make sure not to go out of base path
       until current_path.empty? do
         files = Dir.glob("#{current_path}/**/#{filename}")
         return files unless files.empty?
@@ -128,7 +135,30 @@ module IconBanner
     end
 
     def find_base_color(path)
-      # TODO: extraire du ic_launcher.xml
+      launcher_xml = Ox.load_file(path, mode: :generic)
+
+      background_item = launcher_xml.locate('*/background')[0]
+      return if background_item.nil? || background_item['android:drawable'].nil?
+
+      background_color = background_item['android:drawable'][/(?<=@color\/).*/]
+      background_drawable = background_item['android:drawable'][/(?<=@drawable\/).*/]
+      return if background_color.nil? && background_drawable.nil?
+
+      background_filename = background_color ? 'colors.xml' : "#{background_drawable}.xml"
+      background_files = find_files(path, background_filename)
+
+      background_files.each do |background_file|
+        background_icon = Ox.load_file(background_file, mode: :generic)
+        if background_color
+          color_values = background_icon.locate("*/color[@name=#{background_color}]")
+          return color_values[0].nodes[0] unless color_values.empty?
+        elsif background_drawable
+          # TODO: Calculate average instead of using first color
+          colors = background_icon.locate('*/?[@android:fillColor]').map { |c| c['android:fillColor'] }
+          colors = background_icon.locate('*/?[@android:color]').map { |c| c['android:color'] } if colors.empty?
+          return colors[0]
+        end
+      end
     end
   end
 end
