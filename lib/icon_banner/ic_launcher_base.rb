@@ -13,10 +13,6 @@ module IconBanner
       UI.error '`generate_banner` should not be run on base class'
     end
 
-    def process_icon(icon_path, banner_path)
-      UI.error '`process_icon` should not be run on base class'
-    end
-
     def backup_path(path)
       ext = File.extname path
       backup_path = path

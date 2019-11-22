@@ -22,29 +22,30 @@ module IconBanner
       label = options[:label]
       font = options[:font] || IconBanner.font_path
 
-      if app_icons.count > 0
-        app_icons.each do |icon_path|
-          UI.verbose "Processing #{icon_path}"
-          create_backup icon_path if options[:backup]
-
-          color = options[:color]
-          color = find_base_color(icon_path) unless color
-          color = $last_used_color unless color
-          color = 'black' unless color
-          UI.verbose "Primary color: #{color}"
-
-          $last_used_color = color
-
-          generate_banner icon_path, label, color, font
-
-          UI.verbose "Completed processing #{File.basename icon_path}"
-          UI.verbose ''
-        end
-
-        UI.message "Completed #{self.class::PLATFORM} generation."
-      else
+      if app_icons.empty?
         UI.message "No #{self.class::PLATFORM} icons found."
+        return
       end
+
+      app_icons.each do |icon_path|
+        UI.verbose "Processing #{icon_path}"
+        create_backup icon_path if options[:backup]
+
+        color = options[:color]
+        color = find_base_color(icon_path) unless color
+        color = $last_used_color unless color
+        color = '#000000' unless color
+        UI.verbose "Primary color: #{color}"
+
+        $last_used_color = color
+
+        generate_banner icon_path, label, color, font
+
+        UI.verbose "Completed processing #{File.basename icon_path}"
+        UI.verbose ''
+      end
+
+      UI.message "Completed #{self.class::PLATFORM} generation."
     end
 
     def restore(path)
