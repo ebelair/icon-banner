@@ -9,7 +9,7 @@ module IconBanner
     BASE_ICON_PATH = '/**/ic_launcher*.png'
     PLATFORM = 'Android (Legacy)'
 
-    def generate_banner(path, label, color, font)
+    def generate_banner(icon_path, base_path, label, color, font, options)
       banner_file = Tempfile.new %w[banner .png]
 
       size = 1024
@@ -77,10 +77,10 @@ module IconBanner
 
       banner_file.close
 
-      icon = MiniMagick::Image.open(path)
+      icon = MiniMagick::Image.open(icon_path)
       banner = MiniMagick::Image.open(banner_file.path)
       banner.resize "#{icon.width}x#{icon.height}"
-      icon.composite(banner).write(path)
+      icon.composite(banner).write(icon_path)
     end
   end
 end

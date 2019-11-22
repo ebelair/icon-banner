@@ -15,8 +15,6 @@ module IconBanner
 
       UI.message "Generating #{self.class::PLATFORM} banners..."
 
-      restore(path) # restore in case it was already run before
-
       app_icons = get_app_icons(path)
 
       label = options[:label]
@@ -29,17 +27,21 @@ module IconBanner
 
       app_icons.each do |icon_path|
         UI.verbose "Processing #{icon_path}"
-        create_backup icon_path if options[:backup]
+
+        if options[:backup]
+          restore_backup icon_path
+          create_backup icon_path
+        end
 
         color = options[:color]
-        color = find_base_color(icon_path) unless color
+        color = find_base_color(icon_path, path) unless color
         color = $last_used_color unless color
         color = '#000000' unless color
         UI.verbose "Primary color: #{color}"
 
         $last_used_color = color
 
-        generate_banner icon_path, label, color, font
+        generate_banner icon_path, path, label, color, font, options
 
         UI.verbose "Completed processing #{File.basename icon_path}"
         UI.verbose ''
@@ -69,12 +71,12 @@ module IconBanner
 
     def get_app_icons(path)
       app_icons = Dir.glob("#{path}#{self.class::BASE_ICON_PATH}")
-      app_icons.reject { |icon| should_ignore_icon(icon) }
+      app_icons.reject { |icon_path| should_ignore_icon(icon_path) }
     end
 
-    def find_base_color(path)
+    def find_base_color(icon_path, base_path)
       color = MiniMagick::Tool::Convert.new do |convert|
-        convert << path
+        convert << icon_path
         convert.colors 3
         convert.background 'white'
         convert.alpha 'remove'
@@ -114,7 +116,7 @@ module IconBanner
       platform.nil? || platform[/#{self.class::PLATFORM_CODE}/i] || platform == 'all'
     end
 
-    def generate_banner(path, label, color, font)
+    def generate_banner(icon_path, base_path, label, color, font, options)
       UI.error '`generate_banner` should not be run on base class'
     end
 
@@ -122,7 +124,7 @@ module IconBanner
       UI.error '`backup_path` should not be run on base class'
     end
 
-    def should_ignore_icon(icon)
+    def should_ignore_icon(icon_path)
       UI.error '`should_ignore_icon` should not be run on base class'
     end
   end

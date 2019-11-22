@@ -9,7 +9,7 @@ module IconBanner
     PLATFORM = 'iOS'
     PLATFORM_CODE = 'ios'
 
-    def generate_banner(path, label, color, font)
+    def generate_banner(icon_path, base_path, label, color, font, options)
       banner_file = Tempfile.new %w[banner .png]
 
       MiniMagick::Tool::Convert.new do |convert|
@@ -39,10 +39,10 @@ module IconBanner
         combine.draw "affine 0.5,-0.5,0.5,0.5,-286,-286 text 0,0 \"#{label}\""
       end
 
-      icon = MiniMagick::Image.open(path)
+      icon = MiniMagick::Image.open(icon_path)
       banner = MiniMagick::Image.open(banner_file.path)
       banner.resize "#{icon.width}x#{icon.height}"
-      icon.composite(banner).write(path)
+      icon.composite(banner).write(icon_path)
 
       banner_file.close
     end
@@ -55,8 +55,11 @@ module IconBanner
       backup_path
     end
 
-    def should_ignore_icon(icon)
-      icon[/\/Carthage\//] || icon[/\/Pods\//] || icon[/\/Releases\//]
+    def should_ignore_icon(icon_path)
+      icon_path[/\/Carthage\//] ||
+          icon_path[/\/Pods\//] ||
+          icon_path[/\/Releases\//] ||
+          icon_path[/#{Regexp.escape(BACKUP_EXTENSION)}/]
     end
   end
 end

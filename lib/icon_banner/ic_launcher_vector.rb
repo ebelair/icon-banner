@@ -21,27 +21,29 @@ module IconBanner
 
     LABEL_BOTTOM_PADDING = 1.0
 
-    def generate_banner(path, label, color, font)
+    def generate_banner(icon_path, base_path, label, color, font, options)
       text_svg = generate_text_svg(label, font)
 
-      launcher_xml = Ox.load_file(path, mode: :generic)
+      launcher_xml = Ox.load_file(icon_path, mode: :generic)
 
       foreground_item = launcher_xml.locate('*/foreground')[0]
       if foreground_item.nil? || foreground_item['android:drawable'].nil?
-        UI.error "Cannot process #{path}: <foreground> must refer to a drawable"
+        UI.error "Cannot process #{icon_path}: <foreground> must refer to a drawable"
         return
       end
 
       foreground_drawable = foreground_item['android:drawable'][/(?<=@drawable\/).*/]
-      foreground_files = find_files(path, "#{foreground_drawable}.xml")
+      foreground_files = find_files(icon_path, base_path, "#{foreground_drawable}.xml")
 
       foreground_files.each do |foreground_file|
         $adaptive_processed_files = [] if $adaptive_processed_files.nil?
         break if $adaptive_processed_files.include?(foreground_file)
         $adaptive_processed_files.push foreground_file
 
-        restore_backup foreground_file
-        create_backup foreground_file
+        if options[:backup]
+          restore_backup foreground_file
+          create_backup foreground_file
+        end
 
         foreground_icon = Ox.load_file(foreground_file, mode: :generic)
 
@@ -124,18 +126,17 @@ module IconBanner
       }
     end
 
-    def find_files(path, filename)
-      current_path = File.dirname(path)
-      # TODO: Make sure not to go out of base path
-      until current_path.empty? do
+    def find_files(icon_path, base_path, filename)
+      current_path = File.dirname(icon_path)
+      until File.realpath(current_path) == File.realpath(base_path) || current_path.empty? do
         files = Dir.glob("#{current_path}/**/#{filename}")
         return files unless files.empty?
         current_path = current_path.split(File::SEPARATOR)[0...-1].join(File::SEPARATOR)
       end
     end
 
-    def find_base_color(path)
-      launcher_xml = Ox.load_file(path, mode: :generic)
+    def find_base_color(icon_path, base_path)
+      launcher_xml = Ox.load_file(icon_path, mode: :generic)
 
       background_item = launcher_xml.locate('*/background')[0]
       return if background_item.nil? || background_item['android:drawable'].nil?
@@ -145,7 +146,7 @@ module IconBanner
       return if background_color.nil? && background_drawable.nil?
 
       background_filename = background_color ? 'colors.xml' : "#{background_drawable}.xml"
-      background_files = find_files(path, background_filename)
+      background_files = find_files(icon_path, base_path, background_filename)
 
       background_files.each do |background_file|
         background_icon = Ox.load_file(background_file, mode: :generic)

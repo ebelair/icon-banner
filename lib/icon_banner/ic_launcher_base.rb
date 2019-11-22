@@ -9,7 +9,7 @@ module IconBanner
     PLATFORM = '__TO OVERRIDE__'
     PLATFORM_CODE = 'android'
 
-    def generate_banner(path, label, color, font)
+    def generate_banner(icon_path, base_path, label, color, font, options)
       UI.error '`generate_banner` should not be run on base class'
     end
 
@@ -24,8 +24,10 @@ module IconBanner
       backup_path
     end
 
-    def should_ignore_icon(icon)
-      icon[/\/build\//] || icon[/\/generated\//] || icon[/#{BACKUP_EXTENSION}/]
+    def should_ignore_icon(icon_path)
+      icon_path[/\/build\//] ||
+          icon_path[/\/generated\//] ||
+          icon_path[/#{Regexp.escape(BACKUP_EXTENSION)}/]
     end
   end
 end
