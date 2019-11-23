@@ -44,7 +44,7 @@ module IconBanner
       foreground_files.each do |foreground_file|
         $adaptive_processed_files = [] if $adaptive_processed_files.nil?
         if $adaptive_processed_files.include?(foreground_file)
-          UI.message "Skipped #{icon_path}: Already processed"
+          UI.message "Skipped #{foreground_file}: Already processed"
           break
         end
         $adaptive_processed_files.push foreground_file
@@ -65,13 +65,20 @@ module IconBanner
           break
         end
 
+        effective_color = color.paint.to_hex
+        if effective_color.paint.brightness >= 220.0
+          effective_color = get_drawable_main_color(foreground_icon, false)
+          effective_color = '#000000' if effective_color.nil? || effective_color.paint.brightness >= 220.0
+          UI.verbose "Override primary color: #{effective_color}"
+        end
+
         banner_ln_y = height * (1 - (NORMAL_PADDING + BANNER_HEIGHT + LINE_HEIGHT) / NORMAL_SIZE)
         banner_bg_y = height * (1 - (NORMAL_PADDING + BANNER_HEIGHT) / NORMAL_SIZE)
         banner_ln_path = "M 0 #{banner_ln_y} L 0 #{banner_bg_y} L #{width} #{banner_bg_y} L #{width} #{banner_ln_y}z"
         banner_bg_path = "M 0 #{banner_bg_y} L 0 #{height} L #{width} #{height} L #{width} #{banner_bg_y}z"
 
         banner_ln_object = Ox::Element.new('path')
-        banner_ln_object['android:fillColor'] = color.paint.to_hex
+        banner_ln_object['android:fillColor'] = effective_color
         banner_ln_object['android:pathData'] = banner_ln_path
         foreground_icon << banner_ln_object
 
@@ -100,7 +107,7 @@ module IconBanner
             letter_group['android:translateY'] = letter_path['transform'].gsub(/[^\d,-]/,'').split(',')[-1]
           end
           letter_object = Ox::Element.new('path')
-          letter_object['android:fillColor'] = color.paint.to_hex
+          letter_object['android:fillColor'] = effective_color
           letter_object['android:pathData'] = letter_path['d']
           letter_group << letter_object
           banner_text_object << letter_group
@@ -169,9 +176,8 @@ module IconBanner
         color_file_content = Ox.load_file(color_file, mode: :generic)
         colors = color_file_content.locate("*/color[@name=#{color_name}]")
 
-        colors.map { |c| c.nodes[0] }
-            .reject { |c| c.nil? }
-            .each do |color|
+        colors = colors.map { |c| c.nodes[0] }.reject { |c| c.nil? }
+        colors.each do |color|
           if color[/(?<=@color\/).*/]
             return fetch_color_in_colors(icon_path, base_path, color[/(?<=@color\/).*/])
           end
@@ -188,30 +194,35 @@ module IconBanner
 
       drawable_files.each do |drawable_file|
         drawable_icon = Ox.load_file(drawable_file, mode: :generic)
-
-        all_colors = drawable_icon.locate('*/?[@android:fillColor]').map { |c| c['android:fillColor'] }
-        all_colors |= drawable_icon.locate('*/?[@android:color]').map { |c| c['android:color'] }
-
-        all_colors = all_colors.map do |color|
-          if color[/(?<=@color\/).*/]
-            return fetch_color_in_colors(icon_path, base_path, color[/(?<=@color\/).*/])
-          end
-          return color
-        end
-
-        colors = all_colors.select { |color| color.paint.rgb.a > 0.95 }
-
-        if colors.length > 1
-          r = colors.inject(0.0) { |sum, color| sum + color.paint.rgb.r * color.paint.rgb.a } / colors.length
-          g = colors.inject(0.0) { |sum, color| sum + color.paint.rgb.g * color.paint.rgb.a } / colors.length
-          b = colors.inject(0.0) { |sum, color| sum + color.paint.rgb.b * color.paint.rgb.a } / colors.length
-          return "rgb(#{r},#{g},#{b})".paint.to_hex
-        end
-
-        return colors[0] if colors[0]
+        main_color = get_drawable_main_color(drawable_icon)
+        return main_color if main_color
       end
 
       nil
+    end
+
+    def get_drawable_main_color(drawable_icon, merge = true)
+      all_colors = drawable_icon.locate('*/?[@android:fillColor]').map { |c| c['android:fillColor'] }
+      all_colors |= drawable_icon.locate('*/?[@android:color]').map { |c| c['android:color'] }
+
+      all_colors = all_colors.map do |color|
+        if color[/(?<=@color\/).*/]
+          fetch_color_in_colors(icon_path, base_path, color[/(?<=@color\/).*/])
+        else
+          color
+        end
+      end
+
+      colors = all_colors.select { |color| color.paint.rgb.a > 0.95 }
+
+      if merge && colors.length > 1
+        r = colors.inject(0.0) { |sum, color| sum + color.paint.rgb.r } / colors.length
+        g = colors.inject(0.0) { |sum, color| sum + color.paint.rgb.g } / colors.length
+        b = colors.inject(0.0) { |sum, color| sum + color.paint.rgb.b } / colors.length
+        return "rgb(#{r},#{g},#{b})".paint.to_hex
+      end
+
+      colors[0]
     end
   end
 end
