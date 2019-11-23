@@ -34,11 +34,19 @@ module IconBanner
       end
 
       foreground_drawable = foreground_item['android:drawable'][/(?<=@drawable\/).*/]
-      foreground_files = find_files(icon_path, base_path, "#{foreground_drawable}.xml")
+      foreground_files = find_files(icon_path, base_path, "#{foreground_drawable}.xml", false)
+
+      if foreground_files.empty?
+        UI.error "Cannot process #{icon_path}: Could not find #{foreground_item['android:drawable']}"
+        return
+      end
 
       foreground_files.each do |foreground_file|
         $adaptive_processed_files = [] if $adaptive_processed_files.nil?
-        break if $adaptive_processed_files.include?(foreground_file)
+        if $adaptive_processed_files.include?(foreground_file)
+          UI.message "Skipped #{icon_path}: Already processed"
+          break
+        end
         $adaptive_processed_files.push foreground_file
 
         if options[:backup]
@@ -127,13 +135,15 @@ module IconBanner
       }
     end
 
-    def find_files(icon_path, base_path, filename)
+    def find_files(icon_path, base_path, filename, deep_search = true)
       current_path = File.dirname(icon_path)
+      files = []
       until File.realpath(current_path) == File.realpath(base_path) || current_path.empty? do
-        files = Dir.glob("#{current_path}/**/#{filename}")
-        return files unless files.empty?
+        files |= Dir.glob("#{current_path}/**/#{filename}").reject { |file| should_ignore_icon(file) }
+        return files unless files.empty? || deep_search
         current_path = current_path.split(File::SEPARATOR)[0...-1].join(File::SEPARATOR)
       end
+      files
     end
 
     def find_base_color(icon_path, base_path)
@@ -142,32 +152,66 @@ module IconBanner
       background_item = launcher_xml.locate('*/background')[0]
       return if background_item.nil? || background_item['android:drawable'].nil?
 
-      background_color = background_item['android:drawable'][/(?<=@color\/).*/]
-      background_drawable = background_item['android:drawable'][/(?<=@drawable\/).*/]
-      return if background_color.nil? && background_drawable.nil?
+      color = background_item['android:drawable'][/(?<=@color\/).*/]
+      return fetch_color_in_colors(icon_path, base_path, color) if color
 
-      background_filename = background_color ? 'colors.xml' : "#{background_drawable}.xml"
-      background_files = find_files(icon_path, base_path, background_filename)
+      drawable = background_item['android:drawable'][/(?<=@drawable\/).*/]
+      return fetch_color_in_drawable(icon_path, base_path, drawable) if drawable
 
-      background_files.each do |background_file|
-        background_icon = Ox.load_file(background_file, mode: :generic)
-        if background_color
-          color_values = background_icon.locate("*/color[@name=#{background_color}]")
-          return color_values[0].nodes[0] unless color_values.empty?
-        elsif background_drawable
-          colors = background_icon.locate('*/?[@android:fillColor]').map { |c| c['android:fillColor'] }
-          colors = background_icon.locate('*/?[@android:color]').map { |c| c['android:color'] } if colors.empty?
+      nil
+    end
 
-          if colors.length > 1
-            r = colors.inject(0.0) { |sum, color| sum + color.paint.rgb.r } / colors.length
-            g = colors.inject(0.0) { |sum, color| sum + color.paint.rgb.g } / colors.length
-            b = colors.inject(0.0) { |sum, color| sum + color.paint.rgb.b } / colors.length
-            return "rgb(#{r},#{g},#{b})".paint.to_hex
-          else
-            return colors[0]
+    def fetch_color_in_colors(icon_path, base_path, color_name)
+      color_files = find_files(icon_path, base_path, 'colors.xml')
+      color_files |= find_files(icon_path, base_path, "#{color_name}.xml")
+
+      color_files.each do |color_file|
+        color_file_content = Ox.load_file(color_file, mode: :generic)
+        colors = color_file_content.locate("*/color[@name=#{color_name}]")
+
+        colors.map { |c| c.nodes[0] }
+            .reject { |c| c.nil? }
+            .each do |color|
+          if color[/(?<=@color\/).*/]
+            return fetch_color_in_colors(icon_path, base_path, color[/(?<=@color\/).*/])
           end
+
+          return color.paint.to_hex if color.paint.to_hex
         end
       end
+
+      nil
+    end
+
+    def fetch_color_in_drawable(icon_path, base_path, drawable_name)
+      drawable_files = find_files(icon_path, base_path, "#{drawable_name}.xml")
+
+      drawable_files.each do |drawable_file|
+        drawable_icon = Ox.load_file(drawable_file, mode: :generic)
+
+        all_colors = drawable_icon.locate('*/?[@android:fillColor]').map { |c| c['android:fillColor'] }
+        all_colors |= drawable_icon.locate('*/?[@android:color]').map { |c| c['android:color'] }
+
+        all_colors = all_colors.map do |color|
+          if color[/(?<=@color\/).*/]
+            return fetch_color_in_colors(icon_path, base_path, color[/(?<=@color\/).*/])
+          end
+          return color
+        end
+
+        colors = all_colors.select { |color| color.paint.rgb.a > 0.95 }
+
+        if colors.length > 1
+          r = colors.inject(0.0) { |sum, color| sum + color.paint.rgb.r * color.paint.rgb.a } / colors.length
+          g = colors.inject(0.0) { |sum, color| sum + color.paint.rgb.g * color.paint.rgb.a } / colors.length
+          b = colors.inject(0.0) { |sum, color| sum + color.paint.rgb.b * color.paint.rgb.a } / colors.length
+          return "rgb(#{r},#{g},#{b})".paint.to_hex
+        end
+
+        return colors[0] if colors[0]
+      end
+
+      nil
     end
   end
 end
