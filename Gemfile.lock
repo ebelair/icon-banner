@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    icon-banner (0.2.0)
+    icon-banner (0.2.2)
       fastlane (~> 2.100)
       mini_magick (~> 4.9.4)
 
@@ -26,7 +26,7 @@ GEM
       unf (>= 0.0.5, < 1.0.0)
     dotenv (2.7.5)
     emoji_regex (1.0.1)
-    excon (0.68.0)
+    excon (0.69.1)
     faraday (0.17.0)
       multipart-post (>= 1.2, < 3)
     faraday-cookie_jar (0.0.6)
