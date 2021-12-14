@@ -44,7 +44,7 @@ module IconBanner
     end
 
     def should_ignore_icon(icon)
-      icon[/\/Carthage\//] || icon[/\/Pods\//] || icon[/\/Releases\//]
+      icon[/\/Carthage\//] || icon[/\/Pods\//] || icon[/\/Releases\//] || icon[/\/checkouts\//]
     end
   end
 end
