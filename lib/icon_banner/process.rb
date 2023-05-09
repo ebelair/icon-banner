@@ -99,7 +99,7 @@ module IconBanner
 
     def restore_backup(icon_path)
       restore_path = backup_path(icon_path)
-      if File.exists?(restore_path)
+      if File.exist?(restore_path)
         FileUtils.cp(restore_path, icon_path)
         File.delete restore_path
       end
