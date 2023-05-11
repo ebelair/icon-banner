@@ -3,7 +3,7 @@ PATH
   specs:
     icon-banner (0.2.3)
       fastlane (~> 2.100)
-      mini_magick (~> 4.9.4)
+      mini_magick (~> 4.12.0)
 
 GEM
   remote: https://rubygems.org/
@@ -160,7 +160,7 @@ GEM
     json (2.6.3)
     jwt (2.7.0)
     memoist (0.16.2)
-    mini_magick (4.9.5)
+    mini_magick (4.12.0)
     mini_mime (1.1.2)
     multi_json (1.15.0)
     multipart-post (2.0.0)
