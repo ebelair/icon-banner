@@ -90,7 +90,7 @@ module IconBanner
         UI.error('ImageMagick was not found on your system. To install it, run the following command:')
         UI.command('brew install imagemagick')
         UI.user_error!('IconBanner is missing requirements.')
-      end unless `which convert`.include?('convert')
+      end unless `which magick`.include?('magick')
     end
 
     def self.base_path

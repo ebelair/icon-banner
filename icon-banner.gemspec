@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'fastlane', '~> 2.100'
-  spec.add_dependency 'mini_magick', '~> 4.12.0'
+  spec.add_dependency 'mini_magick', '~> 4.13.2'
 
   spec.add_development_dependency 'rspec', '~> 3.4'
 end
