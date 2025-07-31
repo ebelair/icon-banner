@@ -33,8 +33,8 @@ module IconBanner
         combine.font font
         combine.fill color
         combine.gravity 'Center'
-        combine.pointsize 150 - ([label.length - 8, 0].max * 8)
-        combine.draw "affine 0.5,-0.5,0.5,0.5,-286,-286 text 0,0 \"#{label}\""
+        combine.pointsize (150 - ([label.length - 8, 0].max * 8)) * Math.sqrt(0.5)
+        combine.draw "translate -287,-287 rotate -45 text 0,0 \"#{label}\""
       end
     end
 
